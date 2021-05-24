@@ -4,26 +4,25 @@ exports.up = async (knex) => {
       users.increments('user_id');
       users.string('user_username', 200).notNullable();
       users.string('user_password', 200).notNullable();
-      users.string('user_email', 320).notNullable();
+      users.string('user_phone', 320).notNullable();
       users.timestamps(false, true);
     })
 
-    .createTable('plants', (plants) => {
-      plants.increments('plantid');
-      plants.string('nickname', 100).notNullable();
-      plants.string('species, 100').notNullable();
-      plants.string('h2ofrequency, 100').notNullable();
-      plants
-        .integer('userid')
+    .createTable('plants', (item) => {
+      item.increments('plantid');
+      item.string('nickname', 100).notNullable();
+      item.string('species', 100).notNullable();
+      item.string('h2ofrequency', 100).notNullable();
+      item
+        .integer('user_id')
         .unsigned()
-        .references('userid')
         .notNullable()
+        .references('user_id')
         .inTable('users')
-        .onDelete('RESTRICT')
-        .onUpdate('CASCADE');
+        .onDelete('RESTRICT');
     });
 };
 
 exports.down = async (knex) => {
-  await knex.schema.dropTableIfExists('users').dropTableIfExists('plants');
+  await knex.schema.dropTableIfExists('plants').dropTableIfExists('users');
 };
