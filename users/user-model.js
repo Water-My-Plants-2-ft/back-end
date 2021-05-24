@@ -1,42 +1,29 @@
-const db = require('../data/db-config');
-const bcrypt = require('bcryptjs');
+const db = require('../api/data/db-config');
 
 const getAll = () => {
-  return db('users').select('userid', 'username', 'phonenumber');
+  return db('users');
 };
 
-const add = async (user) => {
-  return await db('users').insert(user, ['userid', 'username', 'phonenumber']);
+const findById = (id) => {
+  return db('users').where('user_id', id).first();
 };
 
-const getById = (userid) => {
-  return db('users').where({ userid }).first();
+const add = (user) => {
+  return db.insert(user).into('users');
 };
 
-const getByUsername = (username) => {
-  return db('users').where({ username }).first();
+const update = (id, changes) => {
+  return db('users').where('user_id', id).update(changes);
 };
 
-const getByPhoneNumber = (phonenumber) => {
-  return db('users').where({ phonenumber }).first();
+const remove = (id) => {
+  return db('users').where('user_id', id).del();
 };
-
-const update = async (user) => {
-  const { userid, password } = user;
-  const newUser = user;
-  if (password) {
-    newUser.password = bcrypt.hashSync(password, 8);
-  }
-};
-return await db('users')
-  .where({ userid })
-  .update(newUser, ['userid', 'username', 'phonenumber']);
 
 module.exports = {
   getAll,
+  findById,
   add,
-  getById,
-  getByUsername,
-  getByPhoneNumber,
   update,
+  remove,
 };

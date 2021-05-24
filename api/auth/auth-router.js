@@ -1,67 +1,60 @@
-const express = require('express');
+const router = require('express').Router();
 const bcrypt = require('bcryptjs');
-const User = require('../users/users-model');
-
-const { JWT_SECRET } = require('./secrets');
 const jwt = require('jsonwebtoken');
+const secrets = require('../auth/index');
+const checkForUserData = require('../../middleware/users-middleware');
+const Users = require('../../users/user-model');
 
-const router = express.Router();
+router.post('/register', checkForUserData, (req, res) => {
+  let validation = req.body;
+  const hash = bcrypt.hashSync(validation.password, 8);
+  validation.password = hash;
 
-const {
-  registerPayload,
-  usernameAvailability,
-  phoneAvailability,
-  loginPayload,
-  checkUserExists,
-} = require('../middleware/user-model');
+  Users.add(validation)
+    .then((savedUser) => {
+      const token = generateToken(savedUser);
 
-router.post(
-  '/createnewuser',
-  registerPayload,
-  usernameAvailability,
-  phoneAvailability,
-  (req, res) => {
-    const { username, password, phonenumber } = req.body;
-    const hash = bcrypt.hashSync(password, 8);
-    User.add({ username, password: hash, phonenumber })
-      .then((user) => {
-        const token = generateToken(user[0]);
-        res
-          .status(201)
-          .json({ user: user[0], token, message: 'new user created' });
-      })
-      .catch((err) => res.status(500).json({ message: err.message }));
-  }
-);
-
-router.post('/login', loginPayload, checkUserExists, (req, res) => {
-  const { username, password } = req.body;
-  User.getByUsername(username)
-    .then((user) => {
-      if (user && bcrypt.compareSync(password, user.password)) {
-        const token = generateToken(user);
-        res.json({ message: 'login successful', token, user });
-      } else {
-        res.status(401).json({ message: 'invalid credentials' });
-      }
+      res.status(201).json({ message: 'register success', savedUser, token });
     })
-    .catch((err) => res.status(500).json({ message: err.message }));
+    .catch((error) => {
+      res.status(500).json(error.message);
+    });
 });
 
-router.get('/api/auth/logout', (req, res) => {
-  res.json({ message: 'thank you!' });
+router.post('/login', (req, res) => {
+  let { username, password } = req.body;
+
+  Users.findBy({ username })
+    .first()
+    .then((user) => {
+      if (user && bcrypt.compareSync(password, user.user_password)) {
+        const token = generateToken(user);
+
+        res.status(200).json({
+          message: `Logged in! Welcome ${user.user_username}!`,
+          user_id: user.user_id,
+          token,
+        });
+      } else {
+        res.status(401).json({ message: 'Your login is invalid' });
+      }
+    })
+    .catch((error) => {
+      res.status(500).json(error);
+    });
 });
 
 function generateToken(user) {
   const payload = {
-    subject: user.user_id,
-    username: user.username,
-    lat: Date.now(),
+    userId: user.user_id,
+    username: user.user_username,
   };
+
   const options = {
-    expiresIn: '1h',
+    expiresIn: '1d',
   };
-  return jwt.sign(payload, JWT_SECRET, options);
+
+  return jwt.sign(payload, secrets.jwtSecret, options);
 }
 
 module.exports = router;

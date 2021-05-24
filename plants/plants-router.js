@@ -1,55 +1,58 @@
-const express = require('express');
-const Plant = require('./plants-model');
+const router = require('express').Router();
+const Plants = require('../helpers/plants-model.js');
+const restricted = require('../middleware/restricted.js');
+const validPlant = require('../middleware/plant-id.js');
+const checkPlantData = require('../middleware/plant-data.js');
 
-const router = express.Router();
-
-router.get('/plants', (req, res) => {
-  Plant.getAll()
+router.get('/', restricted, (req, res) => {
+  Plants.find()
     .then((plants) => {
-      res.json(plants);
-    })
-    .catch((err) => res.status(500).json({ message: err.message }));
-});
-
-router.get('/plant/:plantid', plantExists, (req, res) => {
-  Plant.getById(req.params.plantid)
-    .then((plant) => {
-      res.json(plant);
-    })
-    .catch((err) => res.status(500).json({ message: err.message }));
-});
-
-router.post('/plant/:userid', userExists, plantPayload, (req, res) => {
-  Plant.add({ ...req.body, userid: req.params.userid })
-    .then((plant) => {
-      res.status(201).json(plant[0]);
+      res.status(200).json(plants);
     })
     .catch((err) => {
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ error: 'list of plants is not available' });
     });
 });
 
-router.put('/plant/:plantid', plantExists, (req, res) => {
-  const { plantid } = req.params;
+router.get('/:id', restricted, validPlant, (req, res) => {
+  const id = req.params.id;
 
-  Plant.update({ ...req.body, plantid })
-    .then((plant) => {
-      res.json(plant[0]);
+  Plants.findPlantById(id)
+    .then((plants) => {
+      res.status(200).json(plants);
     })
     .catch((err) => {
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ error: 'information not received' });
     });
 });
 
-router.delete('/plant/:plantid', plantExists, (req, res) => {
-  Plant.remove(req.params.plantid)
-    .then(() => {
-      res.json({
-        message: `plant with id ${req.params.plantid} successfully deleted`,
-      });
+router.put('/:id', restricted, validPlant, checkPlantData, (req, res) => {
+  const id = req.params.id;
+  const changes = req.body;
+  const updatedPlant = { ...changes, id };
+
+  Plants.update(id, changes)
+    .then((editPlant) => {
+      console.log(editPlant);
+      res.status(200).json(updatedPlant);
     })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ error: 'could not update plant information' });
+    });
+});
+
+router.delete('/:id', restricted, validPlant, (req, res) => {
+  const id = req.params.id;
+
+  Plants.remove(id)
+    .then((deleted) => {
+      console.log(deleted);
+      res.status(200).json({ success: ` plant was deleted` });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ error: 'could not delete plant' });
     });
 });
 

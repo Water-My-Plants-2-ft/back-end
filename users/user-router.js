@@ -1,68 +1,90 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
+const router = require('express').Router();
+const bcrypt = require('bcryptjs');
+const Users = require('../users/user-model');
+const Plants = require('../plants/plants-model');
+const restricted = require('../middleware/restrict');
+const validUser = require('../users/user-model');
+const checkPlantData = require('../middleware/plants-middleware');
 
-const User = require('./users-model');
-const Plant = require('../plants/plants-model');
-const { JWT_SECRET } = require('../auth/secrets/index');
-
-const router = express.Router();
-
-router.get('/users', (req, res) => {
-  User.getAll()
-    .then((users) => {
-      res.json(users);
-    })
-    .catch((err) => res.status(500).json({ message: err.message }));
-});
-
-router.get('/user/:id', checkUserId, (req, res) => {
-  const userid = req.params.id;
-  User.getById(userid)
+router.get('/', restricted, (req, res) => {
+  Users.find()
     .then((user) => {
-      res.json({ username: user.username, phonenumber: user.phonenumber });
-    })
-    .catch((err) => res.status(500).json({ message: err.message }));
-});
-
-router.put('/user/:id', checkUserId, (req, res) => {
-  const userid = req.params.id;
-  const newUser = { ...req.body, userid };
-  User.update(newUser)
-    .then((user) => {
-      res.json({ message: 'user info successfully updated', user: user[0] });
+      res.status(200).json(user);
     })
     .catch((err) => {
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ error: 'no list generated' });
     });
 });
 
-router.get('/user/:id/plants', checkUserId, (req, res) => {
-  const userid = req.params.id;
-  Plant.getUserPlants(userid)
-    .then((plants) => {
-      res.json(plants);
+router.get('/:id', restricted, validUser, (req, res) => {
+  const id = req.params.id;
+
+  Users.myUserId(id)
+    .then((users) => {
+      res.status(200).json(users);
     })
-    .catch((err) => res.status(500).json({ message: err.message }));
+    .catch((err) => {
+      res.status(500).json({ error: 'user id not received' });
+    });
 });
 
-router.get('/getuserinfo', async (req, res) => {
-  const token = req.headers.authorization;
-  if (!token) {
-    res.status(400).json({ message: 'no user info' });
-  } else {
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
-      if (err) {
-        res.status(401).json({ message: 'token invalid' });
-      } else {
-        Plant.getUserPlants(decoded.user.userid)
-          .then((plants) => {
-            console.log({ ...decoded.user, plants });
-            res.json({ ...decoded.user, plants });
-          })
-          .catch((err) => res.status(500).json({ message: err.message }));
-      }
+router.put('/:id', restricted, validUser, (req, res) => {
+  const id = req.params.id;
+  const changes = req.body;
+  const hash = bcrypt.hashSync(changes.password, 8);
+  changes.password = hash;
+  const updatedUser = { ...changes, id };
+
+  Users.update(id, changes)
+    .then((editUser) => {
+      console.log(updatedUser);
+      res.status(200).json(updatedUser);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ error: 'users cannot be updated' });
     });
-  }
+});
+
+router.delete('/:id', restricted, validUser, (req, res) => {
+  const id = req.params.id;
+
+  Users.remove(id)
+    .then((deleted) => {
+      console.log(deleted);
+      res.status(200).json({ success: `user was successfully deleted` });
+    })
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({ error: 'user could not be deleted' });
+    });
+});
+
+router.get('/:id', restricted, validUser, (req, res) => {
+  console.log(req.params.id);
+  Plants.findPlantsByUser(req.params.id)
+    .then((user) => {
+      res.status(200).json(user);
+    })
+    .catch((err) => {
+      res
+        .status(500)
+        .json({ error: 'Could not get the list of plants for this user' });
+    });
+});
+
+router.post('/:id', restricted, validUser, checkPlantData, (req, res) => {
+  const id = req.params.id;
+  let plants = req.body;
+  plants = { ...plants, user_id: id };
+
+  Plants.add(plants)
+    .then((newPlant) => {
+      res.status(201).json(newPlant);
+    })
+    .catch((error) => {
+      res.status(500).json({ error: 'Could not save the plant' });
+    });
 });
 
 module.exports = router;
