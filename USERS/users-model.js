@@ -16,7 +16,7 @@ function updateUser(id, user) {
 
 function findById(id) {
   return db('users')
-    .select('user_id', 'username', 'password', 'phone')
+    .select('user_id', 'username', 'phone')
     .where('user_id', id)
     .first();
 }

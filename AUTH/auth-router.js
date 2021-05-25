@@ -2,49 +2,65 @@ const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../AUTH/Secrets/index');
 const bcrypt = require('bcryptjs');
-const User = require('../USERS/users-model');
-const {
-  checkUsernameAvailable,
-  checkUsernameExists,
-} = require('../AUTH/auth-middleware');
+const users = require('../USERS/users-model');
 
-router.post('/register', checkUsernameAvailable, (req, res, next) => {
-  const credentials = req.body;
+router.post('/register', async (req, res, next) => {
+  try {
+    const { username, password, phone } = req.body;
+    if (!username || !password) {
+      return res.status(409).json({
+        message: 'a username and password are required',
+      });
+    }
+    const invalidUsername = await users.findByUsername(username);
 
-  if (!credentials.username || !credentials.password || !credentials.phone) {
-    res
-      .status(400)
-      .json({ message: 'a username, password, and phone number are required' });
-  } else {
-    const hash = bcrypt.hashSync(credentials.password, 8);
-    credentials.password = hash;
-
-    User.add(credentials)
-      .then((user) => {
-        res.status(201).json(user);
-      })
-      .catch(next);
+    if (!invalidUsername) {
+      return res.status(409).json({
+        message: 'that username is taken',
+      });
+    }
+    const hashedPW = await bcrypt.hashSync(password, 8);
+    const newUser = await users.add({
+      username,
+      password: hashedPW,
+      phone,
+    });
+    res.status(201).json({
+      id: newUser.id,
+      username: newUser.username,
+      password: newUser.password,
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
-router.post('/login', checkUsernameExists, (req, res, next) => {
-  if (!req.body.username || !req.body.password) {
-    res.status(400).json({ message: 'all fields are required' });
-  } else {
+router.post('/login', async (req, res, next) => {
+  try {
     const { username, password } = req.body;
 
-    User.findByUsername(username)
-      .then((user) => {
-        if (user && bcrypt.compareSync(password, user[0].password)) {
-          const token = buildToken(user[0]);
-          res
-            .status(200)
-            .json({ message: `welcome, ${user[0].username}`, token });
-        } else {
-          res.status(401).json({ message: 'invalid credentials' });
-        }
-      })
-      .catch(next);
+    if (!username || !password) {
+      res.status(409).json({
+        message: 'username and password are required',
+      });
+    }
+
+    const user = await users.findByUsername(username);
+    if (!user) {
+      return res.status(401).json({
+        message: 'invalid credentials',
+      });
+    }
+
+    const token = buildToken(user);
+
+    res.cookie('token', token);
+    res.status(200).json({
+      message: `Welcome, ${username}`,
+      token: token,
+    });
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -52,16 +68,19 @@ function buildToken(user) {
   const payload = {
     subject: user.user_id,
     username: user.username,
+    lat: Date.now(),
   };
-  const config = {
+  const options = {
     expiresIn: '1d',
   };
-  return jwt.sign(payload, JWT_SECRET, config);
+  return jwt.sign(payload, JWT_SECRET, options);
 }
 
-router.use((err, req, res, next) /*eslint-disable-line*/ => {
+router.use((err, req, res, next) => {
   res.status(500).json({
-    message: 'Something went wrong in the router',
+    customMessage: 'something went wrong in auth router',
+    message: err.message,
+    stack: err.stack,
   });
 });
 

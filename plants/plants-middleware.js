@@ -14,7 +14,7 @@ const checkPlantId = async (req, res, next) => {
 };
 
 const checkPlantPayload = (req, res, next) => {
-  if (!req.body.nickname || !req.body.species || !req.body.h2o_frequency) {
+  if (!req.body.nickname || !req.body.species || !req.body.h2ofrequency) {
     res.status(400).json({ message: 'please enter info for all fields' });
   } else {
     next();

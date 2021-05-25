@@ -8,7 +8,7 @@ exports.up = async (knex) => {
       users.timestamps(false, true);
     })
 
-    .createTable('plants', (plants) => {
+    .createTable('plants', (item) => {
       item.increments('plant_id');
       item.string('nickname', 100).notNullable();
       item.string('species', 100).notNullable();

@@ -38,7 +38,9 @@ router.put('/:id', restricted, checkUserId, (req, res, next) => {
 
 router.use((err, req, res, next) /*eslint-disable-line*/ => {
   res.status(500).json({
-    message: 'Something went wrong in the router',
+    customMessage: 'Something went wrong in user router',
+    message: err.message,
+    stack: err.stack,
   });
 });
 

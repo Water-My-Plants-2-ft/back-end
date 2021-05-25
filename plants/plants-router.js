@@ -4,6 +4,7 @@ const {
   checkPlantId,
   checkPlantPayload,
 } = require('../PLANTS/plants-middleware');
+const { checkUserId } = require('../USERS/users-middleware');
 const restricted = require('../AUTH/restricted');
 
 //get all the plants
@@ -15,7 +16,16 @@ router.get('/', restricted, (req, res, next) => {
     .catch(next);
 });
 
-//get the plants by ID
+// get all plants by user id
+router.get('/user/:id', restricted, checkUserId, (req, res, next) => {
+  Plants.getPlantsByUserId(req.params.id)
+    .then((plants) => {
+      res.status(200).json(plants);
+    })
+    .catch(next);
+});
+
+//get the plants by plant ID
 router.get('/:id', restricted, checkPlantId, (req, res, next) => {
   Plants.getPlantById(req.params.id)
     .then((plant) => {
@@ -61,7 +71,9 @@ router.delete('/:id', restricted, checkPlantId, (req, res, next) => {
 
 router.use((err, req, res, next) /*eslint-disable-line*/ => {
   res.status(500).json({
-    message: 'Something went wrong in the router',
+    customMessage: 'Something went wrong in plant router',
+    message: err.message,
+    stack: err.stack,
   });
 });
 
