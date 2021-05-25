@@ -1,4 +1,4 @@
-const { getPlantById } = require('.//plants-model');
+const { getPlantById } = require('./plants-model');
 
 const checkPlantId = async (req, res, next) => {
   try {

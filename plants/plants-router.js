@@ -1,9 +1,6 @@
 const router = require('express').Router();
-const Plants = require('../PLANTS/plants-model');
-const {
-  checkPlantId,
-  checkPlantPayload,
-} = require('../PLANTS/plants-middleware');
+const Plants = require('./plants-model');
+const { checkPlantId, checkPlantPayload } = require('./plants-middleware');
 const { checkUserId } = require('../USERS/users-middleware');
 const restricted = require('../AUTH/restricted');
 
