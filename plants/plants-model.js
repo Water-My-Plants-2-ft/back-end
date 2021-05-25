@@ -1,49 +1,42 @@
-const db = require('../api/data/db-config');
+const db = require('../api/db-config');
 
-const getAll = () => {
+const getPlants = () => {
   return db('plants');
 };
 
-const add = (plant) => {
+const getPlantById = (plant_id) => {
+  return db('plants').where('plant_id', plant_id).first();
+};
+
+const getPlantsByUserId = (user_id) => {
+  return db('plants').where('user_id', user_id);
+};
+
+const createPlant = (plant) => {
+  console.log(plant);
   return db('plants').insert(plant, [
+    'plant_id',
     'nickname',
-    'h2ofrequency',
     'species',
-    'plantid',
-    'userid',
+    'h2ofrequency',
   ]);
 };
 
-const getById = (plantid) => {
-  return db('plants').where({ plantid }).first();
-};
-
-const update = (plant) => {
-  const { plantid } = plant;
+const updatePlant = async (id, plant) => {
   return db('plants')
-    .where({ plantid })
-    .update(plant, [
-      'nickname',
-      'h2ofrequency',
-      'species',
-      'plantid',
-      'userid',
-    ]);
+    .where('plant_id', id)
+    .update(plant, ['plant_id', 'nickname', 'species', 'h2ofrequency']);
 };
 
-const remove = (plantid) => {
-  return db('plants').where({ plantid }).del();
-};
-
-const getUserPlants = (userid) => {
-  return db('plants').where({ userid });
+const deletePlant = async (plant_id) => {
+  return db('plants').where('plant_id', plant_id).del();
 };
 
 module.exports = {
-  getAll,
-  add,
-  getById,
-  update,
-  remove,
-  getUserPlants,
+  getPlants,
+  getPlantById,
+  getPlantsByUserId,
+  createPlant,
+  updatePlant,
+  deletePlant,
 };

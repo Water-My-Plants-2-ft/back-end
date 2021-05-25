@@ -1,56 +1,80 @@
-const express = require('express');
-const Plant = require('./plants-model');
+const router = require('express').Router();
+const Plants = require('../PLANTS/plants-model');
+const {
+  checkPlantId,
+  checkPlantPayload,
+} = require('../PLANTS/plants-middleware');
+const { checkUserId } = require('../USERS/users-middleware');
+const restricted = require('../AUTH/restricted');
 
-const router = express.Router();
-
-router.get('/plants', (req, res) => {
-  Plant.getAll()
+//get all the plants
+router.get('/', restricted, (req, res, next) => {
+  Plants.getPlants()
     .then((plants) => {
-      res.json(plants);
+      res.status(200).json(plants);
     })
-    .catch((err) => res.status(500).json({ message: err.message }));
+    .catch(next);
 });
 
-router.get('/plant/:plantid', plantExists, (req, res) => {
-  Plant.getById(req.params.plantid)
+// get all plants by user id
+router.get('/user/:id', restricted, checkUserId, (req, res, next) => {
+  Plants.getPlantsByUserId(req.params.id)
+    .then((plants) => {
+      res.status(200).json(plants);
+    })
+    .catch(next);
+});
+
+//get the plants by plant ID
+router.get('/:id', restricted, checkPlantId, (req, res, next) => {
+  Plants.getPlantById(req.params.id)
     .then((plant) => {
-      res.json(plant);
+      res.status(200).json(plant);
     })
-    .catch((err) => res.status(500).json({ message: err.message }));
+    .catch(next);
 });
 
-router.post('/plant/:userid', userExists, plantPayload, (req, res) => {
-  Plant.add({ ...req.body, userid: req.params.userid })
+// create a new plant
+router.post('/', restricted, checkPlantPayload, (req, res, next) => {
+  Plants.createPlant(req.body)
     .then((plant) => {
-      res.status(201).json(plant[0]);
+      res.status(201).json(plant);
     })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
+    .catch(next);
 });
 
-router.put('/plant/:plantid', plantExists, (req, res) => {
-  const { plantid } = req.params;
+//update a plants info
+router.put(
+  '/:id',
+  restricted,
+  checkPlantId,
+  checkPlantPayload,
+  (req, res, next) => {
+    Plants.updatePlant(req.params.id, req.body)
+      .then((plant) => {
+        res.status(200).json(plant);
+      })
+      .catch(next);
+  }
+);
 
-  Plant.update({ ...req.body, plantid })
-    .then((plant) => {
-      res.json(plant[0]);
-    })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
-});
-
-router.delete('/plant/:plantid', plantExists, (req, res) => {
-  Plant.remove(req.params.plantid)
+//delete a plant
+router.delete('/:id', restricted, checkPlantId, (req, res, next) => {
+  Plants.deletePlant(req.params.id)
     .then(() => {
-      res.json({
-        message: `plant with id ${req.params.plantid} successfully deleted`,
+      res.status(200).json({
+        message: 'Your plant was deleted',
       });
     })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
+    .catch(next);
+});
+
+router.use((err, req, res, next) /*eslint-disable-line*/ => {
+  res.status(500).json({
+    customMessage: 'Something went wrong in plant router',
+    message: err.message,
+    stack: err.stack,
+  });
 });
 
 module.exports = router;
