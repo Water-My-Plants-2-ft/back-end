@@ -1,5 +1,5 @@
-exports.seed = async (knex) => {
-  await knex('plants').insert([
+exports.seed = function (knex) {
+  return knex('plants').insert([
     {
       plantid: 1,
       nickname: 'boston fern',

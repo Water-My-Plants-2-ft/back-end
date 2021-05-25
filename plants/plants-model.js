@@ -1,47 +1,36 @@
-const db = require('../api/data/db-config');
+const db = require('../api/db-config');
 
-module.exports = {
-  getAllPlants,
-  findPlantsById,
-  findPlantsByUser,
-  add,
-  update,
-  remove,
+const getPlants = () => {
+  return db('plants');
 };
 
-function getAllPlants() {
-  return db('plants');
-}
+const getPlantById = (plant_id) => {
+  return db('plants').where('plant_id', plant_id).first();
+};
 
-function findPlantsById(id) {
-  return db('plants').where({ id }).first();
-}
+const createPlant = (plant) => {
+  return db('plants').insert(plant, [
+    'plant_id',
+    'nickname',
+    'species',
+    'h2o_frequency',
+  ]);
+};
 
-function findPlantsByUser(userId) {
-  return db('users')
-    .join('plants', 'users_id', 'plants.user_id')
-    .select(
-      'plants.id',
-      'plants.nickname',
-      'plants.species',
-      'plants.h2ofrequency'
-    )
-    .where('users_id', userId);
-}
-
-function add(plant) {
+const updatePlant = async (id, plant) => {
   return db('plants')
-    .insert(plant, 'plantid')
-    .then((ids) => {
-      const [id] = ids;
-      return findById(id);
-    });
-}
+    .where('plant_id', id)
+    .update(plant, ['plant_id', 'nickname', 'species', 'h2o_frequency']);
+};
 
-function update(id, changes) {
-  return db('plants').where({ id }).update(changes);
-}
+const deletePlant = async (plant_id) => {
+  return db('plants').where('plant_id', plant_id).del();
+};
 
-function remove(id) {
-  return db('plants').where('plantid', id).del();
-}
+module.exports = {
+  getPlants,
+  getPlantById,
+  createPlant,
+  updatePlant,
+  deletePlant,
+};

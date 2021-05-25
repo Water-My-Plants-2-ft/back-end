@@ -1,59 +1,68 @@
 const router = require('express').Router();
-const Plants = require('../helpers/plants-model.js');
-const restricted = require('../middleware/restricted.js');
-const validPlant = require('../middleware/plant-id.js');
-const checkPlantData = require('../middleware/plant-data.js');
+const Plants = require('../PLANTS/plants-model');
+const {
+  checkPlantId,
+  checkPlantPayload,
+} = require('../PLANTS/plants-middleware');
+const restricted = require('../AUTH/restricted');
 
-router.get('/', restricted, (req, res) => {
-  Plants.find()
+//get all the plants
+router.get('/', restricted, (req, res, next) => {
+  Plants.getPlants()
     .then((plants) => {
       res.status(200).json(plants);
     })
-    .catch((err) => {
-      res.status(500).json({ error: 'list of plants is not available' });
-    });
+    .catch(next);
 });
 
-router.get('/:id', restricted, validPlant, (req, res) => {
-  const id = req.params.id;
-
-  Plants.findPlantById(id)
-    .then((plants) => {
-      res.status(200).json(plants);
+//get the plants by ID
+router.get('/:id', restricted, checkPlantId, (req, res, next) => {
+  Plants.getPlantById(req.params.id)
+    .then((plant) => {
+      res.status(200).json(plant);
     })
-    .catch((err) => {
-      res.status(500).json({ error: 'information not received' });
-    });
+    .catch(next);
 });
 
-router.put('/:id', restricted, validPlant, checkPlantData, (req, res) => {
-  const id = req.params.id;
-  const changes = req.body;
-  const updatedPlant = { ...changes, id };
-
-  Plants.update(id, changes)
-    .then((editPlant) => {
-      console.log(editPlant);
-      res.status(200).json(updatedPlant);
+// create a new plant
+router.post('/', restricted, checkPlantPayload, (req, res, next) => {
+  Plants.createPlant(req.body)
+    .then((plant) => {
+      res.status(201).json(plant);
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'could not update plant information' });
-    });
+    .catch(next);
 });
 
-router.delete('/:id', restricted, validPlant, (req, res) => {
-  const id = req.params.id;
+//update a plants info
+router.put(
+  '/:id',
+  restricted,
+  checkPlantId,
+  checkPlantPayload,
+  (req, res, next) => {
+    Plants.updatePlant(req.params.id, req.body)
+      .then((plant) => {
+        res.status(200).json(plant);
+      })
+      .catch(next);
+  }
+);
 
-  Plants.remove(id)
-    .then((deleted) => {
-      console.log(deleted);
-      res.status(200).json({ success: ` plant was deleted` });
+//delete a plant
+router.delete('/:id', restricted, checkPlantId, (req, res, next) => {
+  Plants.deletePlant(req.params.id)
+    .then(() => {
+      res.status(200).json({
+        message: 'Your plant was deleted',
+      });
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'could not delete plant' });
-    });
+    .catch(next);
+});
+
+router.use((err, req, res, next) /*eslint-disable-line*/ => {
+  res.status(500).json({
+    message: 'Something went wrong in the router',
+  });
 });
 
 module.exports = router;
