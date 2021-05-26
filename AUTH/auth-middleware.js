@@ -1,5 +1,5 @@
 const User = require('../USERS/users-modell');
-
+//
 const checkUsernameAvailable = async (req, res, next) => {
   if (!req.body.username || !req.body.password || !req.body.phone) {
     next();

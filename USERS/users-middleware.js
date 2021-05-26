@@ -1,5 +1,5 @@
 const { findById } = require('./users-model');
-
+//
 const checkUserId = async (req, res, next) => {
   try {
     const user = await findById(req.params.id);
