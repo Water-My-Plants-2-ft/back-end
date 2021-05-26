@@ -1,10 +1,10 @@
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
-const plantsRouter = require('../PLANTS/plants-router');
-const usersRouter = require('../USERS/users-router');
-const authRouter = require('../AUTH/auth-router');
-const restricted = require('../AUTH/restricted');
+const plantsRouter = require('../plants/plants-router');
+const usersRouter = require('../users/users-router');
+const authRouter = require('../auth/auth-router');
+const restricted = require('../auth/restricted');
 
 const server = express();
 server.use(express.json());
