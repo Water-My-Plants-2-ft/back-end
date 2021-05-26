@@ -1,4 +1,4 @@
-const { findById } = require('../USERS/users-model');
+const { findById } = require('./users-model');
 
 const checkUserId = async (req, res, next) => {
   try {

@@ -2,7 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const plantsRouter = require('../plants/plants-router');
-const usersRouter = require('../USERS/users-router');
+const usersRouter = require('../users/users-router');
 const authRouter = require('../AUTH/auth-router');
 const restricted = require('../AUTH/restricted');
 
@@ -13,7 +13,7 @@ server.use(cors());
 
 server.use('/api/users', restricted, usersRouter);
 server.use('/api/plants', restricted, plantsRouter);
-server.use(authRouter);
+server.use('/api/auth', authRouter);
 
 server.use('*', (req, res) => {
   res.json({ api: 'up' });
