@@ -41,7 +41,8 @@ https://water-my-plants-web41.herokuapp.com/api
 | nickname      | string  | yes      | no     | plant nickname |
 | species       | string  | yes      | no     | plant species |
 | h20_frequency | string  | yes      | no     | directions for watering |
-user's id associated with plant - foreign key (will auto populate when new plant is created) |
+
+user's id associated with plant - foreign key (will auto populate when new plant is created) 
 
 
 # Requests and Returns:
